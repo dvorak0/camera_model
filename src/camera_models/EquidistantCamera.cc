@@ -15,80 +15,62 @@ namespace camodocal
 {
 
 EquidistantCamera::Parameters::Parameters()
- : Camera::Parameters(KANNALA_BRANDT)
- , m_k2(0.0)
- , m_k3(0.0)
- , m_k4(0.0)
- , m_k5(0.0)
- , m_mu(0.0)
- , m_mv(0.0)
- , m_u0(0.0)
- , m_v0(0.0)
+    : Camera::Parameters(KANNALA_BRANDT), m_k2(0.0), m_k3(0.0), m_k4(0.0), m_k5(0.0), m_mu(0.0), m_mv(0.0), m_u0(0.0), m_v0(0.0)
 {
-
 }
 
-EquidistantCamera::Parameters::Parameters(const std::string& cameraName,
+EquidistantCamera::Parameters::Parameters(const std::string &cameraName,
                                           int w, int h,
                                           double k2, double k3, double k4, double k5,
                                           double mu, double mv,
                                           double u0, double v0)
- : Camera::Parameters(KANNALA_BRANDT, cameraName, w, h)
- , m_k2(k2)
- , m_k3(k3)
- , m_k4(k4)
- , m_k5(k5)
- , m_mu(mu)
- , m_mv(mv)
- , m_u0(u0)
- , m_v0(v0)
+    : Camera::Parameters(KANNALA_BRANDT, cameraName, w, h), m_k2(k2), m_k3(k3), m_k4(k4), m_k5(k5), m_mu(mu), m_mv(mv), m_u0(u0), m_v0(v0)
 {
-
 }
 
-double&
+double &
 EquidistantCamera::Parameters::k2(void)
 {
     return m_k2;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::k3(void)
 {
     return m_k3;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::k4(void)
 {
     return m_k4;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::k5(void)
 {
     return m_k5;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::mu(void)
 {
     return m_mu;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::mv(void)
 {
     return m_mv;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::u0(void)
 {
     return m_u0;
 }
 
-double&
+double &
 EquidistantCamera::Parameters::v0(void)
 {
     return m_v0;
@@ -142,8 +124,7 @@ EquidistantCamera::Parameters::v0(void) const
     return m_v0;
 }
 
-bool
-EquidistantCamera::Parameters::readFromYamlFile(const std::string& filename)
+bool EquidistantCamera::Parameters::readFromYamlFile(const std::string &filename)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
 
@@ -178,35 +159,47 @@ EquidistantCamera::Parameters::readFromYamlFile(const std::string& filename)
     m_u0 = static_cast<double>(n["u0"]);
     m_v0 = static_cast<double>(n["v0"]);
 
+    if (!fs["binning"].isNone() && static_cast<int>(fs["binning"]))
+    {
+        puts("binning");
+        m_imageWidth /= 2;
+        m_imageHeight /= 2;
+        m_mu /= 2;
+        m_mv /= 2;
+        m_u0 /= 2;
+        m_v0 /= 2;
+    }
+
     return true;
 }
 
-void
-EquidistantCamera::Parameters::writeToYamlFile(const std::string& filename) const
+void EquidistantCamera::Parameters::writeToYamlFile(const std::string &filename) const
 {
     cv::FileStorage fs(filename, cv::FileStorage::WRITE);
 
-    fs << "model_type" << "KANNALA_BRANDT";
+    fs << "model_type"
+       << "KANNALA_BRANDT";
     fs << "camera_name" << m_cameraName;
     fs << "image_width" << m_imageWidth;
     fs << "image_height" << m_imageHeight;
 
     // projection: k2, k3, k4, k5, mu, mv, u0, v0
     fs << "projection_parameters";
-    fs << "{" << "k2" << m_k2
-              << "k3" << m_k3
-              << "k4" << m_k4
-              << "k5" << m_k5
-              << "mu" << m_mu
-              << "mv" << m_mv
-              << "u0" << m_u0
-              << "v0" << m_v0 << "}";
+    fs << "{"
+       << "k2" << m_k2
+       << "k3" << m_k3
+       << "k4" << m_k4
+       << "k5" << m_k5
+       << "mu" << m_mu
+       << "mv" << m_mv
+       << "u0" << m_u0
+       << "v0" << m_v0 << "}";
 
     fs.release();
 }
 
-EquidistantCamera::Parameters&
-EquidistantCamera::Parameters::operator=(const EquidistantCamera::Parameters& other)
+EquidistantCamera::Parameters &
+EquidistantCamera::Parameters::operator=(const EquidistantCamera::Parameters &other)
 {
     if (this != &other)
     {
@@ -227,11 +220,12 @@ EquidistantCamera::Parameters::operator=(const EquidistantCamera::Parameters& ot
     return *this;
 }
 
-std::ostream&
-operator<< (std::ostream& out, const EquidistantCamera::Parameters& params)
+std::ostream &
+operator<<(std::ostream &out, const EquidistantCamera::Parameters &params)
 {
     out << "Camera Parameters:" << std::endl;
-    out << "    model_type " << "KANNALA_BRANDT" << std::endl;
+    out << "    model_type "
+        << "KANNALA_BRANDT" << std::endl;
     out << "   camera_name " << params.m_cameraName << std::endl;
     out << "   image_width " << params.m_imageWidth << std::endl;
     out << "  image_height " << params.m_imageHeight << std::endl;
@@ -251,21 +245,17 @@ operator<< (std::ostream& out, const EquidistantCamera::Parameters& params)
 }
 
 EquidistantCamera::EquidistantCamera()
- : m_inv_K11(1.0)
- , m_inv_K13(0.0)
- , m_inv_K22(1.0)
- , m_inv_K23(0.0)
+    : m_inv_K11(1.0), m_inv_K13(0.0), m_inv_K22(1.0), m_inv_K23(0.0)
 {
-
 }
 
-EquidistantCamera::EquidistantCamera(const std::string& cameraName,
+EquidistantCamera::EquidistantCamera(const std::string &cameraName,
                                      int imageWidth, int imageHeight,
                                      double k2, double k3, double k4, double k5,
                                      double mu, double mv,
                                      double u0, double v0)
- : mParameters(cameraName, imageWidth, imageHeight,
-               k2, k3, k4, k5, mu, mv, u0, v0)
+    : mParameters(cameraName, imageWidth, imageHeight,
+                  k2, k3, k4, k5, mu, mv, u0, v0)
 {
     // Inverse camera projection matrix parameters
     m_inv_K11 = 1.0 / mParameters.mu();
@@ -274,8 +264,8 @@ EquidistantCamera::EquidistantCamera(const std::string& cameraName,
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
 }
 
-EquidistantCamera::EquidistantCamera(const EquidistantCamera::Parameters& params)
- : mParameters(params)
+EquidistantCamera::EquidistantCamera(const EquidistantCamera::Parameters &params)
+    : mParameters(params)
 {
     // Inverse camera projection matrix parameters
     m_inv_K11 = 1.0 / mParameters.mu();
@@ -290,28 +280,25 @@ EquidistantCamera::modelType(void) const
     return mParameters.modelType();
 }
 
-const std::string&
+const std::string &
 EquidistantCamera::cameraName(void) const
 {
     return mParameters.cameraName();
 }
 
-int
-EquidistantCamera::imageWidth(void) const
+int EquidistantCamera::imageWidth(void) const
 {
     return mParameters.imageWidth();
 }
 
-int
-EquidistantCamera::imageHeight(void) const
+int EquidistantCamera::imageHeight(void) const
 {
     return mParameters.imageHeight();
 }
 
-void
-EquidistantCamera::estimateIntrinsics(const cv::Size& boardSize,
-                                      const std::vector< std::vector<cv::Point3f> >& objectPoints,
-                                      const std::vector< std::vector<cv::Point2f> >& imagePoints)
+void EquidistantCamera::estimateIntrinsics(const cv::Size &boardSize,
+                                           const std::vector<std::vector<cv::Point3f>> &objectPoints,
+                                           const std::vector<std::vector<cv::Point2f>> &imagePoints)
 {
     Parameters params = getParameters();
 
@@ -412,25 +399,23 @@ EquidistantCamera::estimateIntrinsics(const cv::Size& boardSize,
  * \param p image coordinates
  * \param P coordinates of the point on the sphere
  */
-void
-EquidistantCamera::liftSphere(const Eigen::Vector2d& p, Eigen::Vector3d& P) const
+void EquidistantCamera::liftSphere(const Eigen::Vector2d &p, Eigen::Vector3d &P) const
 {
     liftProjective(p, P);
 }
 
-/** 
+/**
  * \brief Lifts a point from the image plane to its projective ray
  *
  * \param p image coordinates
  * \param P coordinates of the projective ray
  */
-void
-EquidistantCamera::liftProjective(const Eigen::Vector2d& p, Eigen::Vector3d& P) const
+void EquidistantCamera::liftProjective(const Eigen::Vector2d &p, Eigen::Vector3d &P) const
 {
     // Lift points to normalised plane
     Eigen::Vector2d p_u;
     p_u << m_inv_K11 * p(0) + m_inv_K13,
-           m_inv_K22 * p(1) + m_inv_K23;
+        m_inv_K22 * p(1) + m_inv_K23;
 
     // Obtain a projective ray
     double theta, phi;
@@ -441,76 +426,94 @@ EquidistantCamera::liftProjective(const Eigen::Vector2d& p, Eigen::Vector3d& P) 
     P(2) = cos(theta);
 }
 
-/** 
+/**
  * \brief Project a 3D point (\a x,\a y,\a z) to the image plane in (\a u,\a v)
  *
  * \param P 3D point coordinates
  * \param p return value, contains the image point coordinates
  */
-void
-EquidistantCamera::spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p) const
+void EquidistantCamera::spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p) const
 {
     double theta = acos(P(2) / P.norm());
     double phi = atan2(P(1), P(0));
 
-    Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d(cos(phi), sin(phi));
+    Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
 
     // Apply generalised projection matrix
     p << mParameters.mu() * p_u(0) + mParameters.u0(),
-         mParameters.mv() * p_u(1) + mParameters.v0();
+        mParameters.mv() * p_u(1) + mParameters.v0();
 }
 
-
-/** 
+/**
  * \brief Project a 3D point to the image plane and calculate Jacobian
  *
  * \param P 3D point coordinates
  * \param p return value, contains the image point coordinates
  */
-void
-EquidistantCamera::spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p,
-                                Eigen::Matrix<double,2,3>& J) const
+void EquidistantCamera::spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p,
+                                     Eigen::Matrix<double, 2, 3> &J) const
 {
     double theta = acos(P(2) / P.norm());
+
+    //todo: reduce phi
     double phi = atan2(P(1), P(0));
 
-    Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d(cos(phi), sin(phi));
+    Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
 
     // Apply generalised projection matrix
     p << mParameters.mu() * p_u(0) + mParameters.u0(),
-         mParameters.mv() * p_u(1) + mParameters.v0();
+        mParameters.mv() * p_u(1) + mParameters.v0();
+
+    Eigen::Matrix2d dp_dpu;
+    dp_dpu << mParameters.mu(), 0,
+        0, mParameters.mv();
+
+    Eigen::Matrix2d dpu_dangle;
+    dpu_dangle.col(0) = dr(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
+    dpu_dangle.col(1) = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{-sin(phi), cos(phi)};
+
+    //https://www.wolframalpha.com/input/?i=d%2Fdx+acos(z%2Fsqrt(x%5E2%2By%5E2%2Bz%5E2)),d%2Fdy+acos(z%2Fsqrt(x%5E2%2By%5E2%2Bz%5E2)),d%2Fdz+acos(z%2Fsqrt(x%5E2%2By%5E2%2Bz%5E2))
+    //https://www.wolframalpha.com/input/?i=d%2Fdx+atan2(y,x),d%2Fdy+atan2(y,x)
+    double xx = P.x() * P.x();
+    double yy = P.y() * P.y();
+    double zz = P.z() * P.z();
+    double squared_n = xx + yy + zz;
+    double d = sqrt((xx + yy)) * squared_n;
+    Eigen::Matrix<double, 2, 3> dangle_dP;
+    dangle_dP << P.x() * P.z() / d, P.y() * P.z() / d, -sqrt(xx + yy) / squared_n,
+        -P.y() / (xx + yy), P.x() / (xx + yy), 0;
+
+    J = dp_dpu * dpu_dangle * dangle_dP;
 }
 
-/** 
+/**
  * \brief Projects an undistorted 2D point p_u to the image plane
  *
  * \param p_u 2D point coordinates
  * \return image point coordinates
  */
-void
-EquidistantCamera::undistToPlane(const Eigen::Vector2d& p_u, Eigen::Vector2d& p) const
+void EquidistantCamera::undistToPlane(const Eigen::Vector2d &p_u, Eigen::Vector2d &p) const
 {
-//    Eigen::Vector2d p_d;
-//
-//    if (m_noDistortion)
-//    {
-//        p_d = p_u;
-//    }
-//    else
-//    {
-//        // Apply distortion
-//        Eigen::Vector2d d_u;
-//        distortion(p_u, d_u);
-//        p_d = p_u + d_u;
-//    }
-//
-//    // Apply generalised projection matrix
-//    p << mParameters.gamma1() * p_d(0) + mParameters.u0(),
-//         mParameters.gamma2() * p_d(1) + mParameters.v0();
+    //    Eigen::Vector2d p_d;
+    //
+    //    if (m_noDistortion)
+    //    {
+    //        p_d = p_u;
+    //    }
+    //    else
+    //    {
+    //        // Apply distortion
+    //        Eigen::Vector2d d_u;
+    //        distortion(p_u, d_u);
+    //        p_d = p_u + d_u;
+    //    }
+    //
+    //    // Apply generalised projection matrix
+    //    p << mParameters.gamma1() * p_d(0) + mParameters.u0(),
+    //         mParameters.gamma2() * p_d(1) + mParameters.v0();
 }
 
-void
-EquidistantCamera::initUndistortMap(cv::Mat& map1, cv::Mat& map2, double fScale) const
+void EquidistantCamera::initUndistortMap(cv::Mat &map1, cv::Mat &map2, double fScale) const
 {
     cv::Size imageSize(mParameters.imageWidth(), mParameters.imageHeight());
 
@@ -533,8 +536,8 @@ EquidistantCamera::initUndistortMap(cv::Mat& map1, cv::Mat& map2, double fScale)
             Eigen::Vector2d p;
             spaceToPlane(P, p);
 
-            mapX.at<float>(v,u) = p(0);
-            mapY.at<float>(v,u) = p(1);
+            mapX.at<float>(v, u) = p(0);
+            mapY.at<float>(v, u) = p(1);
         }
     }
 
@@ -542,7 +545,7 @@ EquidistantCamera::initUndistortMap(cv::Mat& map1, cv::Mat& map2, double fScale)
 }
 
 cv::Mat
-EquidistantCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
+EquidistantCamera::initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
                                            float fx, float fy,
                                            cv::Size imageSize,
                                            float cx, float cy,
@@ -561,20 +564,20 @@ EquidistantCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
     if (cx == -1.0f && cy == -1.0f)
     {
         K_rect << fx, 0, imageSize.width / 2,
-                  0, fy, imageSize.height / 2,
-                  0, 0, 1;
+            0, fy, imageSize.height / 2,
+            0, 0, 1;
     }
     else
     {
         K_rect << fx, 0, cx,
-                  0, fy, cy,
-                  0, 0, 1;
+            0, fy, cy,
+            0, 0, 1;
     }
 
     if (fx == -1.0f || fy == -1.0f)
     {
-        K_rect(0,0) = mParameters.mu();
-        K_rect(1,1) = mParameters.mv();
+        K_rect(0, 0) = mParameters.mu();
+        K_rect(1, 1) = mParameters.mv();
     }
 
     Eigen::Matrix3f K_rect_inv = K_rect.inverse();
@@ -595,8 +598,8 @@ EquidistantCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
             Eigen::Vector2d p;
             spaceToPlane(uo.cast<double>(), p);
 
-            mapX.at<float>(v,u) = p(0);
-            mapY.at<float>(v,u) = p(1);
+            mapX.at<float>(v, u) = p(0);
+            mapY.at<float>(v, u) = p(1);
         }
     }
 
@@ -607,20 +610,18 @@ EquidistantCamera::initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
     return K_rect_cv;
 }
 
-int
-EquidistantCamera::parameterCount(void) const
+int EquidistantCamera::parameterCount(void) const
 {
     return 8;
 }
 
-const EquidistantCamera::Parameters&
+const EquidistantCamera::Parameters &
 EquidistantCamera::getParameters(void) const
 {
     return mParameters;
 }
 
-void
-EquidistantCamera::setParameters(const EquidistantCamera::Parameters& parameters)
+void EquidistantCamera::setParameters(const EquidistantCamera::Parameters &parameters)
 {
     mParameters = parameters;
 
@@ -631,8 +632,7 @@ EquidistantCamera::setParameters(const EquidistantCamera::Parameters& parameters
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
 }
 
-void
-EquidistantCamera::readParameters(const std::vector<double>& parameterVec)
+void EquidistantCamera::readParameters(const std::vector<double> &parameterVec)
 {
     if (parameterVec.size() != parameterCount())
     {
@@ -653,8 +653,7 @@ EquidistantCamera::readParameters(const std::vector<double>& parameterVec)
     setParameters(params);
 }
 
-void
-EquidistantCamera::writeParameters(std::vector<double>& parameterVec) const
+void EquidistantCamera::writeParameters(std::vector<double> &parameterVec) const
 {
     parameterVec.resize(parameterCount());
     parameterVec.at(0) = mParameters.k2();
@@ -667,8 +666,7 @@ EquidistantCamera::writeParameters(std::vector<double>& parameterVec) const
     parameterVec.at(7) = mParameters.v0();
 }
 
-void
-EquidistantCamera::writeParametersToYamlFile(const std::string& filename) const
+void EquidistantCamera::writeParametersToYamlFile(const std::string &filename) const
 {
     mParameters.writeToYamlFile(filename);
 }
@@ -682,9 +680,8 @@ EquidistantCamera::parametersToString(void) const
     return oss.str();
 }
 
-void
-EquidistantCamera::fitOddPoly(const std::vector<double>& x, const std::vector<double>& y,
-                              int n, std::vector<double>& coeffs) const
+void EquidistantCamera::fitOddPoly(const std::vector<double> &x, const std::vector<double> &y,
+                                   int n, std::vector<double> &coeffs) const
 {
     std::vector<int> pows;
     for (int i = 1; i <= n; i += 2)
@@ -698,9 +695,9 @@ EquidistantCamera::fitOddPoly(const std::vector<double>& x, const std::vector<do
     {
         for (size_t j = 0; j < pows.size(); ++j)
         {
-            X(i,j) = pow(x.at(i), pows.at(j));
+            X(i, j) = pow(x.at(i), pows.at(j));
         }
-        Y(i,0) = y.at(i);
+        Y(i, 0) = y.at(i);
     }
 
     Eigen::MatrixXd A = (X.transpose() * X).inverse() * X.transpose() * Y;
@@ -708,13 +705,12 @@ EquidistantCamera::fitOddPoly(const std::vector<double>& x, const std::vector<do
     coeffs.resize(A.rows());
     for (int i = 0; i < A.rows(); ++i)
     {
-        coeffs.at(i) = A(i,0);
+        coeffs.at(i) = A(i, 0);
     }
 }
 
-void
-EquidistantCamera::backprojectSymmetric(const Eigen::Vector2d& p_u,
-                                        double& theta, double& phi) const
+void EquidistantCamera::backprojectSymmetric(const Eigen::Vector2d &p_u,
+                                             double &theta, double &phi) const
 {
     double tol = 1e-10;
     double p_u_norm = p_u.norm();
@@ -779,7 +775,7 @@ EquidistantCamera::backprojectSymmetric(const Eigen::Vector2d& p_u,
         Eigen::MatrixXd A(npow, npow);
         A.setZero();
         A.block(1, 0, npow - 1, npow - 1).setIdentity();
-        A.col(npow - 1) = - coeffs.block(0, 0, npow, 1) / coeffs(npow);
+        A.col(npow - 1) = -coeffs.block(0, 0, npow, 1) / coeffs(npow);
 
         Eigen::EigenSolver<Eigen::MatrixXd> es(A);
         Eigen::MatrixXcd eigval = es.eigenvalues();
@@ -816,5 +812,4 @@ EquidistantCamera::backprojectSymmetric(const Eigen::Vector2d& p_u,
         }
     }
 }
-
 }

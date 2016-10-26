@@ -15,27 +15,27 @@ namespace camodocal
  * for Conventional, Wide-Angle, and Fish-Eye Lenses, PAMI 2006
  */
 
-class EquidistantCamera: public Camera
+class EquidistantCamera : public Camera
 {
-public:
-    class Parameters: public Camera::Parameters
+  public:
+    class Parameters : public Camera::Parameters
     {
-    public:
+      public:
         Parameters();
-        Parameters(const std::string& cameraName,
+        Parameters(const std::string &cameraName,
                    int w, int h,
                    double k2, double k3, double k4, double k5,
                    double mu, double mv,
                    double u0, double v0);
 
-        double& k2(void);
-        double& k3(void);
-        double& k4(void);
-        double& k5(void);
-        double& mu(void);
-        double& mv(void);
-        double& u0(void);
-        double& v0(void);
+        double &k2(void);
+        double &k3(void);
+        double &k4(void);
+        double &k5(void);
+        double &mu(void);
+        double &mv(void);
+        double &u0(void);
+        double &v0(void);
 
         double k2(void) const;
         double k3(void) const;
@@ -46,13 +46,13 @@ public:
         double u0(void) const;
         double v0(void) const;
 
-        bool readFromYamlFile(const std::string& filename);
-        void writeToYamlFile(const std::string& filename) const;
+        bool readFromYamlFile(const std::string &filename);
+        void writeToYamlFile(const std::string &filename) const;
 
-        Parameters& operator=(const Parameters& other);
-        friend std::ostream& operator<< (std::ostream& out, const Parameters& params);
+        Parameters &operator=(const Parameters &other);
+        friend std::ostream &operator<<(std::ostream &out, const Parameters &params);
 
-    private:
+      private:
         // projection
         double m_k2;
         double m_k3;
@@ -70,7 +70,7 @@ public:
     /**
     * \brief Constructor from the projection model parameters
     */
-    EquidistantCamera(const std::string& cameraName,
+    EquidistantCamera(const std::string &cameraName,
                       int imageWidth, int imageHeight,
                       double k2, double k3, double k4, double k5,
                       double mu, double mv,
@@ -78,47 +78,47 @@ public:
     /**
     * \brief Constructor from the projection model parameters
     */
-    EquidistantCamera(const Parameters& params);
+    EquidistantCamera(const Parameters &params);
 
     Camera::ModelType modelType(void) const;
-    const std::string& cameraName(void) const;
+    const std::string &cameraName(void) const;
     int imageWidth(void) const;
     int imageHeight(void) const;
 
-    void estimateIntrinsics(const cv::Size& boardSize,
-                            const std::vector< std::vector<cv::Point3f> >& objectPoints,
-                            const std::vector< std::vector<cv::Point2f> >& imagePoints);
+    void estimateIntrinsics(const cv::Size &boardSize,
+                            const std::vector<std::vector<cv::Point3f>> &objectPoints,
+                            const std::vector<std::vector<cv::Point2f>> &imagePoints);
 
     // Lift points from the image plane to the sphere
-    virtual void liftSphere(const Eigen::Vector2d& p, Eigen::Vector3d& P) const;
+    virtual void liftSphere(const Eigen::Vector2d &p, Eigen::Vector3d &P) const;
     //%output P
 
     // Lift points from the image plane to the projective space
-    void liftProjective(const Eigen::Vector2d& p, Eigen::Vector3d& P) const;
+    void liftProjective(const Eigen::Vector2d &p, Eigen::Vector3d &P) const;
     //%output P
 
     // Projects 3D points to the image plane (Pi function)
-    void spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p) const;
+    void spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p) const;
     //%output p
 
     // Projects 3D points to the image plane (Pi function)
     // and calculates jacobian
-    void spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p,
-                      Eigen::Matrix<double,2,3>& J) const;
+    void spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p,
+                      Eigen::Matrix<double, 2, 3> &J) const;
     //%output p
     //%output J
 
-    void undistToPlane(const Eigen::Vector2d& p_u, Eigen::Vector2d& p) const;
+    void undistToPlane(const Eigen::Vector2d &p_u, Eigen::Vector2d &p) const;
     //%output p
 
     template <typename T>
-    static void spaceToPlane(const T* const params,
-                             const T* const q, const T* const t,
-                             const Eigen::Matrix<T, 3, 1>& P,
-                             Eigen::Matrix<T, 2, 1>& p);
+    static void spaceToPlane(const T *const params,
+                             const T *const q, const T *const t,
+                             const Eigen::Matrix<T, 3, 1> &P,
+                             Eigen::Matrix<T, 2, 1> &p);
 
-    void initUndistortMap(cv::Mat& map1, cv::Mat& map2, double fScale = 1.0) const;
-    cv::Mat initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
+    void initUndistortMap(cv::Mat &map1, cv::Mat &map2, double fScale = 1.0) const;
+    cv::Mat initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
                                     float fx = -1.0f, float fy = -1.0f,
                                     cv::Size imageSize = cv::Size(0, 0),
                                     float cx = -1.0f, float cy = -1.0f,
@@ -126,26 +126,28 @@ public:
 
     int parameterCount(void) const;
 
-    const Parameters& getParameters(void) const;
-    void setParameters(const Parameters& parameters);
+    const Parameters &getParameters(void) const;
+    void setParameters(const Parameters &parameters);
 
-    void readParameters(const std::vector<double>& parameterVec);
-    void writeParameters(std::vector<double>& parameterVec) const;
+    void readParameters(const std::vector<double> &parameterVec);
+    void writeParameters(std::vector<double> &parameterVec) const;
 
-    void writeParametersToYamlFile(const std::string& filename) const;
+    void writeParametersToYamlFile(const std::string &filename) const;
 
     std::string parametersToString(void) const;
 
-private:
-    template<typename T>
+  private:
+    template <typename T>
     static T r(T k2, T k3, T k4, T k5, T theta);
 
+    template <typename T>
+    static T dr(T k2, T k3, T k4, T k5, T theta);
 
-    void fitOddPoly(const std::vector<double>& x, const std::vector<double>& y,
-                    int n, std::vector<double>& coeffs) const;
+    void fitOddPoly(const std::vector<double> &x, const std::vector<double> &y,
+                    int n, std::vector<double> &coeffs) const;
 
-    void backprojectSymmetric(const Eigen::Vector2d& p_u,
-                              double& theta, double& phi) const;
+    void backprojectSymmetric(const Eigen::Vector2d &p_u,
+                              double &theta, double &phi) const;
 
     Parameters mParameters;
 
@@ -155,9 +157,8 @@ private:
 typedef boost::shared_ptr<EquidistantCamera> EquidistantCameraPtr;
 typedef boost::shared_ptr<const EquidistantCamera> EquidistantCameraConstPtr;
 
-template<typename T>
-T
-EquidistantCamera::r(T k2, T k3, T k4, T k5, T theta)
+template <typename T>
+T EquidistantCamera::r(T k2, T k3, T k4, T k5, T theta)
 {
     // k1 = 1
     return theta +
@@ -168,11 +169,21 @@ EquidistantCamera::r(T k2, T k3, T k4, T k5, T theta)
 }
 
 template <typename T>
-void
-EquidistantCamera::spaceToPlane(const T* const params,
-                                const T* const q, const T* const t,
-                                const Eigen::Matrix<T, 3, 1>& P,
-                                Eigen::Matrix<T, 2, 1>& p)
+T EquidistantCamera::dr(T k2, T k3, T k4, T k5, T theta)
+{
+    // k1 = 1
+    return 1 +
+           k2 * 3 * theta * theta +
+           k3 * 5 * theta * theta * theta * theta +
+           k4 * 7 * theta * theta * theta * theta * theta * theta +
+           k5 * 9 * theta * theta * theta * theta * theta * theta * theta * theta;
+}
+
+template <typename T>
+void EquidistantCamera::spaceToPlane(const T *const params,
+                                     const T *const q, const T *const t,
+                                     const Eigen::Matrix<T, 3, 1> &P,
+                                     Eigen::Matrix<T, 2, 1> &p)
 {
     T P_w[3];
     P_w[0] = T(P(0));
@@ -204,12 +215,11 @@ EquidistantCamera::spaceToPlane(const T* const params,
     T theta = acos(P_c[2] / len);
     T phi = atan2(P_c[1], P_c[0]);
 
-    Eigen::Matrix<T,2,1> p_u = r(k2, k3, k4, k5, theta) * Eigen::Matrix<T,2,1>(cos(phi), sin(phi));
+    Eigen::Matrix<T, 2, 1> p_u = r(k2, k3, k4, k5, theta) * Eigen::Matrix<T, 2, 1>(cos(phi), sin(phi));
 
     p(0) = mu * p_u(0) + u0;
     p(1) = mv * p_u(1) + v0;
 }
-
 }
 
 #endif

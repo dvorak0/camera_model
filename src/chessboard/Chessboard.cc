@@ -316,9 +316,9 @@ Chessboard::findChessboardCornersImproved(const cv::Mat& image,
             corners.push_back(outputCorners.at(i)->pt);
         }
 
-        cv::cornerSubPix(image, corners, cv::Size(11, 11), cv::Size(-1,-1),
-                         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-
+//        cv::cornerSubPix(image, corners, cv::Size(11, 11), cv::Size(-1,-1),
+//                         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+//
         return true;
     }
 }

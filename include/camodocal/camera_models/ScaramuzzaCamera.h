@@ -20,23 +20,23 @@ namespace camodocal
  * https://sites.google.com/site/scarabotix/ocamcalib-toolbox
  */
 
-class OCAMCamera: public Camera
+class OCAMCamera : public Camera
 {
-public:
-    class Parameters: public Camera::Parameters
+  public:
+    class Parameters : public Camera::Parameters
     {
-    public:
+      public:
         Parameters();
 
-        double& C(void) { return m_C; }
-        double& D(void) { return m_D; }
-        double& E(void) { return m_E; }
+        double &C(void) { return m_C; }
+        double &D(void) { return m_D; }
+        double &E(void) { return m_E; }
 
-        double& center_x(void) { return m_center_x; }
-        double& center_y(void) { return m_center_y; }
+        double &center_x(void) { return m_center_x; }
+        double &center_y(void) { return m_center_y; }
 
-        double& poly(int idx) { return m_poly[idx]; }
-        double& inv_poly(int idx) { return m_inv_poly[idx]; }
+        double &poly(int idx) { return m_poly[idx]; }
+        double &inv_poly(int idx) { return m_inv_poly[idx]; }
 
         double C(void) const { return m_C; }
         double D(void) const { return m_D; }
@@ -48,13 +48,13 @@ public:
         double poly(int idx) const { return m_poly[idx]; }
         double inv_poly(int idx) const { return m_inv_poly[idx]; }
 
-        bool readFromYamlFile(const std::string& filename);
-        void writeToYamlFile(const std::string& filename) const;
+        bool readFromYamlFile(const std::string &filename);
+        void writeToYamlFile(const std::string &filename) const;
 
-        Parameters& operator=(const Parameters& other);
-        friend std::ostream& operator<< (std::ostream& out, const Parameters& params);
+        Parameters &operator=(const Parameters &other);
+        friend std::ostream &operator<<(std::ostream &out, const Parameters &params);
 
-    private:
+      private:
         double m_poly[SCARAMUZZA_POLY_SIZE];
         double m_inv_poly[SCARAMUZZA_INV_POLY_SIZE];
         double m_C;
@@ -69,48 +69,47 @@ public:
     /**
     * \brief Constructor from the projection model parameters
     */
-    OCAMCamera(const Parameters& params);
+    OCAMCamera(const Parameters &params);
 
     Camera::ModelType modelType(void) const;
-    const std::string& cameraName(void) const;
+    const std::string &cameraName(void) const;
     int imageWidth(void) const;
     int imageHeight(void) const;
 
-    void estimateIntrinsics(const cv::Size& boardSize,
-                            const std::vector< std::vector<cv::Point3f> >& objectPoints,
-                            const std::vector< std::vector<cv::Point2f> >& imagePoints);
+    void estimateIntrinsics(const cv::Size &boardSize,
+                            const std::vector<std::vector<cv::Point3f>> &objectPoints,
+                            const std::vector<std::vector<cv::Point2f>> &imagePoints);
 
     // Lift points from the image plane to the sphere
-    void liftSphere(const Eigen::Vector2d& p, Eigen::Vector3d& P) const;
+    void liftSphere(const Eigen::Vector2d &p, Eigen::Vector3d &P) const;
     //%output P
 
     // Lift points from the image plane to the projective space
-    void liftProjective(const Eigen::Vector2d& p, Eigen::Vector3d& P) const;
+    void liftProjective(const Eigen::Vector2d &p, Eigen::Vector3d &P) const;
     //%output P
 
     // Projects 3D points to the image plane (Pi function)
-    void spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p) const;
+    void spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p) const;
     //%output p
 
     // Projects 3D points to the image plane (Pi function)
     // and calculates jacobian
-    //void spaceToPlane(const Eigen::Vector3d& P, Eigen::Vector2d& p,
-    //                  Eigen::Matrix<double,2,3>& J) const;
+    void spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p,
+                      Eigen::Matrix<double, 2, 3> &J) const;
     //%output p
     //%output J
 
-    void undistToPlane(const Eigen::Vector2d& p_u, Eigen::Vector2d& p) const;
+    void undistToPlane(const Eigen::Vector2d &p_u, Eigen::Vector2d &p) const;
     //%output p
 
     template <typename T>
-    static void spaceToPlane(const T* const params,
-                             const T* const q, const T* const t,
-                             const Eigen::Matrix<T, 3, 1>& P,
-                             Eigen::Matrix<T, 2, 1>& p);
+    static void spaceToPlane(const T *const params,
+                             const T *const q, const T *const t,
+                             const Eigen::Matrix<T, 3, 1> &P,
+                             Eigen::Matrix<T, 2, 1> &p);
 
-
-    void initUndistortMap(cv::Mat& map1, cv::Mat& map2, double fScale = 1.0) const;
-    cv::Mat initUndistortRectifyMap(cv::Mat& map1, cv::Mat& map2,
+    void initUndistortMap(cv::Mat &map1, cv::Mat &map2, double fScale = 1.0) const;
+    cv::Mat initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
                                     float fx = -1.0f, float fy = -1.0f,
                                     cv::Size imageSize = cv::Size(0, 0),
                                     float cx = -1.0f, float cy = -1.0f,
@@ -118,17 +117,17 @@ public:
 
     int parameterCount(void) const;
 
-    const Parameters& getParameters(void) const;
-    void setParameters(const Parameters& parameters);
+    const Parameters &getParameters(void) const;
+    void setParameters(const Parameters &parameters);
 
-    void readParameters(const std::vector<double>& parameterVec);
-    void writeParameters(std::vector<double>& parameterVec) const;
+    void readParameters(const std::vector<double> &parameterVec);
+    void writeParameters(std::vector<double> &parameterVec) const;
 
-    void writeParametersToYamlFile(const std::string& filename) const;
+    void writeParametersToYamlFile(const std::string &filename) const;
 
     std::string parametersToString(void) const;
 
-private:
+  private:
     Parameters mParameters;
 
     double m_inv_scale;
@@ -138,11 +137,10 @@ typedef boost::shared_ptr<OCAMCamera> OCAMCameraPtr;
 typedef boost::shared_ptr<const OCAMCamera> OCAMCameraConstPtr;
 
 template <typename T>
-void
-OCAMCamera::spaceToPlane(const T* const params,
-                         const T* const q, const T* const t,
-                         const Eigen::Matrix<T, 3, 1>& P,
-                         Eigen::Matrix<T, 2, 1>& p)
+void OCAMCamera::spaceToPlane(const T *const params,
+                              const T *const q, const T *const t,
+                              const Eigen::Matrix<T, 3, 1> &P,
+                              Eigen::Matrix<T, 2, 1> &p)
 {
     T P_c[3];
     {
@@ -165,14 +163,14 @@ OCAMCamera::spaceToPlane(const T* const params,
     T c = params[0];
     T d = params[1];
     T e = params[2];
-    T xc[2] = { params[3], params[4] };
+    T xc[2] = {params[3], params[4]};
 
     //T poly[SCARAMUZZA_POLY_SIZE];
     //for (int i=0; i < SCARAMUZZA_POLY_SIZE; i++)
     //    poly[i] = params[5+i];
 
     T inv_poly[SCARAMUZZA_INV_POLY_SIZE];
-    for (int i=0; i < SCARAMUZZA_INV_POLY_SIZE; i++)
+    for (int i = 0; i < SCARAMUZZA_INV_POLY_SIZE; i++)
         inv_poly[i] = params[5 + SCARAMUZZA_POLY_SIZE + i];
 
     T norm_sqr = P_c[0] * P_c[0] + P_c[1] * P_c[1];
@@ -193,13 +191,11 @@ OCAMCamera::spaceToPlane(const T* const params,
     T invNorm = T(1.0) / norm;
     T xn[2] = {
         P_c[0] * invNorm * rho,
-        P_c[1] * invNorm * rho
-    };
+        P_c[1] * invNorm * rho};
 
     p(0) = xn[0] * c + xn[1] * d + xc[0];
-    p(1) = xn[0] * e + xn[1]     + xc[1];
+    p(1) = xn[0] * e + xn[1] + xc[1];
 }
-
 }
 
 #endif

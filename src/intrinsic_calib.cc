@@ -28,16 +28,16 @@ int main(int argc, char** argv)
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
-        ("width,w", boost::program_options::value<int>(&boardSize.width)->default_value(8), "Number of inner corners on the chessboard pattern in x direction")
-        ("height,h", boost::program_options::value<int>(&boardSize.height)->default_value(12), "Number of inner corners on the chessboard pattern in y direction")
+        ("width,w", boost::program_options::value<int>(&boardSize.width)->default_value(10), "Number of inner corners on the chessboard pattern in x direction")
+        ("height,h", boost::program_options::value<int>(&boardSize.height)->default_value(14), "Number of inner corners on the chessboard pattern in y direction")
         ("size,s", boost::program_options::value<float>(&squareSize)->default_value(7.f), "Size of one square in mm")
-        ("input,i", boost::program_options::value<std::string>(&inputDir)->default_value("calibrationdata"), "Input directory containing chessboard images")
-        ("prefix,p", boost::program_options::value<std::string>(&prefix)->default_value("left-"), "Prefix of images")
-        ("file-extension,e", boost::program_options::value<std::string>(&fileExtension)->default_value(".png"), "File extension of images")
-        ("camera-model", boost::program_options::value<std::string>(&cameraModel)->default_value("mei"), "Camera model: kannala-brandt | mei | pinhole")
+        ("input,i", boost::program_options::value<std::string>(&inputDir)->default_value("test"), "Input directory containing chessboard images")
+        ("prefix,p", boost::program_options::value<std::string>(&prefix)->default_value("frame"), "Prefix of images")
+        ("file-extension,e", boost::program_options::value<std::string>(&fileExtension)->default_value(".jpg"), "File extension of images")
+        ("camera-model", boost::program_options::value<std::string>(&cameraModel)->default_value("kannala-brandt"), "Camera model: kannala-brandt | mei | pinhole")
         ("camera-name", boost::program_options::value<std::string>(&cameraName)->default_value("camera"), "Name of camera")
-        ("opencv", boost::program_options::bool_switch(&useOpenCV)->default_value(true), "Use OpenCV to detect corners")
-        ("view-results", boost::program_options::bool_switch(&viewResults)->default_value(false), "View results")
+        ("opencv", boost::program_options::bool_switch(&useOpenCV)->default_value(false), "Use OpenCV to detect corners")
+        ("view-results", boost::program_options::bool_switch(&viewResults)->default_value(true), "View results")
         ("verbose,v", boost::program_options::bool_switch(&verbose)->default_value(true), "Verbose output")
         ;
 
@@ -85,18 +85,18 @@ int main(int argc, char** argv)
 
     switch (modelType)
     {
-    case camodocal::Camera::KANNALA_BRANDT:
-        std::cout << "# INFO: Camera model: Kannala-Brandt" << std::endl;
-        break;
-    case camodocal::Camera::MEI:
-        std::cout << "# INFO: Camera model: Mei" << std::endl;
-        break;
-    case camodocal::Camera::PINHOLE:
-        std::cout << "# INFO: Camera model: Pinhole" << std::endl;
-        break;
-    case camodocal::Camera::SCARAMUZZA:
-        std::cout << "# INFO: Camera model: Scaramuzza-Omnidirect" << std::endl;
-        break;
+        case camodocal::Camera::KANNALA_BRANDT:
+            std::cout << "# INFO: Camera model: Kannala-Brandt" << std::endl;
+            break;
+        case camodocal::Camera::MEI:
+            std::cout << "# INFO: Camera model: Mei" << std::endl;
+            break;
+        case camodocal::Camera::PINHOLE:
+            std::cout << "# INFO: Camera model: Pinhole" << std::endl;
+            break;
+        case camodocal::Camera::SCARAMUZZA:
+            std::cout << "# INFO: Camera model: Scaramuzza-Omnidirect" << std::endl;
+            break;
     }
 
     // look for images in input directory
@@ -202,8 +202,8 @@ int main(int argc, char** argv)
     if (verbose)
     {
         std::cout << "# INFO: Calibration took a total time of "
-                  << std::fixed << std::setprecision(3) << camodocal::timeInSeconds() - startTime
-                  << " sec.\n";
+            << std::fixed << std::setprecision(3) << camodocal::timeInSeconds() - startTime
+            << " sec.\n";
     }
 
     if (verbose)
@@ -233,8 +233,8 @@ int main(int argc, char** argv)
         for (size_t i = 0; i < cbImages.size(); ++i)
         {
             cv::putText(cbImages.at(i), cbImageFilenames.at(i), cv::Point(10,20),
-                        cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
-                        1, CV_AA);
+                    cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
+                    1, CV_AA);
             cv::imshow("Image", cbImages.at(i));
             cv::waitKey(0);
         }
