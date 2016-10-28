@@ -394,6 +394,10 @@ OCAMCamera::initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
     return K_rect_cv;
 }
 
+void OCAMCamera::initEISRectifyMap(cv::Mat &map1, cv::Mat &map2, const Eigen::Matrix3d &R) const
+{
+}
+
 int OCAMCamera::parameterCount(void) const
 {
     return SCARAMUZZA_CAMERA_NUM_PARAMS;

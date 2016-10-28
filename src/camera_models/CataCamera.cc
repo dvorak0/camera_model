@@ -881,6 +881,10 @@ CataCamera::initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
     return K_rect_cv;
 }
 
+void CataCamera::initEISRectifyMap(cv::Mat &map1, cv::Mat &map2, const Eigen::Matrix3d &R) const
+{
+}
+
 int CataCamera::parameterCount(void) const
 {
     return 9;

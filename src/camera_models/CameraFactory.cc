@@ -2,7 +2,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-
 #include "camodocal/camera_models/CataCamera.h"
 #include "camodocal/camera_models/EquidistantCamera.h"
 #include "camodocal/camera_models/PinholeCamera.h"
@@ -17,7 +16,6 @@ boost::shared_ptr<CameraFactory> CameraFactory::m_instance;
 
 CameraFactory::CameraFactory()
 {
-
 }
 
 boost::shared_ptr<CameraFactory>
@@ -33,7 +31,7 @@ CameraFactory::instance(void)
 
 CameraPtr
 CameraFactory::generateCamera(Camera::ModelType modelType,
-                              const std::string& cameraName,
+                              const std::string &cameraName,
                               cv::Size imageSize) const
 {
     switch (modelType)
@@ -87,7 +85,7 @@ CameraFactory::generateCamera(Camera::ModelType modelType,
 }
 
 CameraPtr
-CameraFactory::generateCameraFromYamlFile(const std::string& filename)
+CameraFactory::generateCameraFromYamlFile(const std::string &filename)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
 
@@ -168,6 +166,4 @@ CameraFactory::generateCameraFromYamlFile(const std::string& filename)
 
     return CameraPtr();
 }
-
 }
-

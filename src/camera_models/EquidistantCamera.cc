@@ -274,6 +274,73 @@ EquidistantCamera::EquidistantCamera(const EquidistantCamera::Parameters &params
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
 }
 
+void EquidistantCamera::preRectify()
+{
+    puts("preRectify begins");
+    cv::Size imageSize(mParameters.imageWidth(), mParameters.imageHeight());
+
+    mapXYZ = cv::Mat::zeros(imageSize, CV_64FC3);
+
+    double err = 0.0;
+    int cnt = 0;
+
+    for (int v = 0; v < imageSize.height; ++v)
+    {
+        for (int u = 0; u < imageSize.width; ++u)
+        {
+            Eigen::Vector3d P;
+            liftProjective(Eigen::Vector2d{u, v}, P);
+            double theta = acos(P(2) / P.norm());
+
+            double phi = atan2(P(1), P(0));
+
+            Eigen::Vector2d p;
+            for (int i = -1; i < 0; i++)
+            {
+
+                Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
+
+                // Apply generalised projection matrix
+                p = Eigen::Vector2d{mParameters.mu() * p_u(0) + mParameters.u0(),
+                                    mParameters.mv() * p_u(1) + mParameters.v0()};
+                if (i == -1)
+                {
+                    //if (fabs(theta) <= M_PI / 2)
+                    //    printf("%d %d -> %f %f %f -> %f %f\n", u, v, P.x(), P.y(), P.z(), p.x(), p.y());
+                    continue;
+                }
+
+                Eigen::Matrix2d dp_dpu;
+                dp_dpu << mParameters.mu(), 0,
+                    0, mParameters.mv();
+
+                Eigen::Matrix2d dpu_dangle;
+                dpu_dangle.col(0) = dr(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
+                dpu_dangle.col(1) = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{-sin(phi), cos(phi)};
+
+                Eigen::Matrix2d J = dp_dpu * dpu_dangle;
+
+                Eigen::Vector2d b = Eigen::Vector2d{u, v} - p;
+                Eigen::Vector2d x = J.householderQr().solve(b);
+                theta += x.x();
+                phi += x.y();
+            }
+
+            cv::Vec3d &xyz = mapXYZ.at<cv::Vec3d>(v, u);
+            xyz[0] = sin(theta) * cos(phi);
+            xyz[1] = sin(theta) * sin(phi);
+            xyz[2] = cos(theta);
+
+            if (fabs(theta) <= M_PI / 2)
+            {
+                err += (p - Eigen::Vector2d{u, v}).squaredNorm();
+                cnt++;
+            }
+        }
+    }
+    printf("preRectify done: %d, with error: %f\n", cnt, sqrt(err / cnt));
+}
+
 Camera::ModelType
 EquidistantCamera::modelType(void) const
 {
@@ -454,8 +521,6 @@ void EquidistantCamera::spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &
                                      Eigen::Matrix<double, 2, 3> &J) const
 {
     double theta = acos(P(2) / P.norm());
-
-    //todo: reduce phi
     double phi = atan2(P(1), P(0));
 
     Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
@@ -610,6 +675,32 @@ EquidistantCamera::initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
     return K_rect_cv;
 }
 
+void EquidistantCamera::initEISRectifyMap(cv::Mat &map1, cv::Mat &map2,
+                                          const Eigen::Matrix3d &R) const
+{
+    cv::Size imageSize(mParameters.imageWidth(), mParameters.imageHeight());
+
+    cv::Mat mapX = cv::Mat::zeros(imageSize, CV_32F);
+    cv::Mat mapY = cv::Mat::zeros(imageSize, CV_32F);
+
+    for (int v = 0; v < imageSize.height; ++v)
+    {
+        for (int u = 0; u < imageSize.width; ++u)
+        {
+            cv::Vec3d xyz = mapXYZ.at<cv::Vec3d>(v, u);
+            Eigen::Vector3d P{xyz[0], xyz[1], xyz[2]};
+
+            Eigen::Vector2d p;
+            spaceToPlane(R * P, p);
+
+            mapX.at<float>(v, u) = p.x();
+            mapY.at<float>(v, u) = p.y();
+        }
+    }
+
+    cv::convertMaps(mapX, mapY, map1, map2, CV_16SC2, false);
+}
+
 int EquidistantCamera::parameterCount(void) const
 {
     return 8;
@@ -630,6 +721,7 @@ void EquidistantCamera::setParameters(const EquidistantCamera::Parameters &param
     m_inv_K13 = -mParameters.u0() / mParameters.mu();
     m_inv_K22 = 1.0 / mParameters.mv();
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
+    preRectify();
 }
 
 void EquidistantCamera::readParameters(const std::vector<double> &parameterVec)

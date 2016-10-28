@@ -122,11 +122,15 @@ class CataCamera : public Camera
                     Eigen::Matrix2d &J) const;
 
     void initUndistortMap(cv::Mat &map1, cv::Mat &map2, double fScale = 1.0) const;
+
     cv::Mat initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
                                     float fx = -1.0f, float fy = -1.0f,
                                     cv::Size imageSize = cv::Size(0, 0),
                                     float cx = -1.0f, float cy = -1.0f,
                                     cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const;
+
+    void initEISRectifyMap(cv::Mat &map1, cv::Mat &map2,
+                           const Eigen::Matrix3d &R) const;
 
     int parameterCount(void) const;
 

@@ -765,6 +765,10 @@ PinholeCamera::initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
     return K_rect_cv;
 }
 
+void PinholeCamera::initEISRectifyMap(cv::Mat &map1, cv::Mat &map2, const Eigen::Matrix3d &R) const
+{
+}
+
 int PinholeCamera::parameterCount(void) const
 {
     return 8;

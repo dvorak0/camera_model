@@ -1,3 +1,10 @@
+#define BACKWARD_HAS_DW 1
+#include <backward.hpp>
+namespace backward
+{
+backward::SignalHandling sh;
+} // namespace backward
+
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -8,10 +15,10 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "camodocal/chessboard/Chessboard.h"
+#include "camodocal/camera_models/CameraFactory.h"
 #include "camodocal/calib/CameraCalibration.h"
 #include "camodocal/gpl/gpl.h"
-
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     cv::Size boardSize;
     float squareSize;
@@ -26,6 +33,7 @@ int main(int argc, char** argv)
 
     //========= Handling Program options =========
     boost::program_options::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "produce help message")
         ("width,w", boost::program_options::value<int>(&boardSize.width)->default_value(10), "Number of inner corners on the chessboard pattern in x direction")
@@ -40,6 +48,7 @@ int main(int argc, char** argv)
         ("view-results", boost::program_options::bool_switch(&viewResults)->default_value(true), "View results")
         ("verbose,v", boost::program_options::bool_switch(&verbose)->default_value(true), "Verbose output")
         ;
+    // clang-format on
 
     boost::program_options::positional_options_description pdesc;
     pdesc.add("input", 1);
@@ -85,18 +94,18 @@ int main(int argc, char** argv)
 
     switch (modelType)
     {
-        case camodocal::Camera::KANNALA_BRANDT:
-            std::cout << "# INFO: Camera model: Kannala-Brandt" << std::endl;
-            break;
-        case camodocal::Camera::MEI:
-            std::cout << "# INFO: Camera model: Mei" << std::endl;
-            break;
-        case camodocal::Camera::PINHOLE:
-            std::cout << "# INFO: Camera model: Pinhole" << std::endl;
-            break;
-        case camodocal::Camera::SCARAMUZZA:
-            std::cout << "# INFO: Camera model: Scaramuzza-Omnidirect" << std::endl;
-            break;
+    case camodocal::Camera::KANNALA_BRANDT:
+        std::cout << "# INFO: Camera model: Kannala-Brandt" << std::endl;
+        break;
+    case camodocal::Camera::MEI:
+        std::cout << "# INFO: Camera model: Mei" << std::endl;
+        break;
+    case camodocal::Camera::PINHOLE:
+        std::cout << "# INFO: Camera model: Pinhole" << std::endl;
+        break;
+    case camodocal::Camera::SCARAMUZZA:
+        std::cout << "# INFO: Camera model: Scaramuzza-Omnidirect" << std::endl;
+        break;
     }
 
     // look for images in input directory
@@ -147,6 +156,76 @@ int main(int argc, char** argv)
 
     cv::Mat image = cv::imread(imageFilenames.front(), -1);
     const cv::Size frameSize = image.size();
+    if (true)
+    {
+        camodocal::CameraPtr m_camera = camodocal::CameraFactory::instance()->generateCameraFromYamlFile(cameraName + "_camera_calib.yaml");
+        for (size_t i = 0; i < imageFilenames.size(); ++i)
+        {
+            cv::Mat img = cv::imread(imageFilenames.at(i), CV_LOAD_IMAGE_GRAYSCALE);
+            const int size = 200;
+            const int degree = 90;
+            const double f = 0.5 * size / std::tan(0.5 * degree / 180.0 * M_PI);
+            Eigen::Matrix3d R[5];
+            int dxy[][2] = {{0, 0},
+                            {-1, 0},
+                            {1, 0},
+                            {0, -1},
+                            {0, 1}};
+            R[0].setIdentity();
+
+            //left
+            R[1] << 0, 0, -1,
+                0, 1, 0,
+                1, 0, 0;
+
+            //right
+            R[2] << 0, 0, 1,
+                0, 1, 0,
+                -1, 0, 0;
+
+            R[3] << 1, 0, 0,
+                0, 0, -1,
+                0, 1, 0;
+
+            R[4] << 1, 0, 0,
+                0, 0, 1,
+                0, -1, 0;
+
+            cv::Mat mapx[5], mapy[5];
+            for (int i = 0; i < 5; i++)
+            {
+                mapx[i] = cv::Mat{size, size, CV_32F};
+                mapy[i] = cv::Mat{size, size, CV_32F};
+            }
+            for (int v = 0; v < size; v++)
+                for (int u = 0; u < size; u++)
+                {
+                    Eigen::Vector3d P{(u - 0.5 * size) / f, (v - 0.5 * size) / f, 1};
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Eigen::Vector2d p;
+                        m_camera->spaceToPlane(R[i] * P, p);
+                        mapx[i].at<float>(v, u) = p.x();
+                        mapy[i].at<float>(v, u) = p.y();
+                    }
+                }
+            cv::imshow("transform", img);
+            cv::Mat s_img{size * 3, size * 3, CV_8U};
+            //{size * 3, size * 3, CV_8U};
+            for (int i = 0; i < 5; i++)
+            {
+                cv::Mat tmp;
+                cv::remap(img, tmp, mapx[i], mapy[i], cv::INTER_LINEAR);
+                puts("write");
+                tmp.copyTo(s_img(cv::Rect(dxy[i][0] * size + size, dxy[i][1] * size + size, size, size))); // = tmp;
+                printf("%d %d\n", s_img.type(), tmp.type());
+                cv::imshow("sub", tmp);
+                cv::imshow("undistort", s_img);
+            }
+            cv::waitKey(0);
+        }
+        return 0;
+    }
 
     camodocal::CameraCalibration calibration(modelType, cameraName, frameSize, boardSize, squareSize);
     calibration.setVerbose(verbose);
@@ -202,8 +281,8 @@ int main(int argc, char** argv)
     if (verbose)
     {
         std::cout << "# INFO: Calibration took a total time of "
-            << std::fixed << std::setprecision(3) << camodocal::timeInSeconds() - startTime
-            << " sec.\n";
+                  << std::fixed << std::setprecision(3) << camodocal::timeInSeconds() - startTime
+                  << " sec.\n";
     }
 
     if (verbose)
@@ -222,21 +301,20 @@ int main(int argc, char** argv)
             {
                 continue;
             }
-
             cbImages.push_back(cv::imread(imageFilenames.at(i), -1));
             cbImageFilenames.push_back(imageFilenames.at(i));
-        }
 
-        // visualize observed and reprojected points
-        calibration.drawResults(cbImages);
+            // visualize observed and reprojected points
+            calibration.drawResults(cbImages);
 
-        for (size_t i = 0; i < cbImages.size(); ++i)
-        {
-            cv::putText(cbImages.at(i), cbImageFilenames.at(i), cv::Point(10,20),
-                    cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
-                    1, CV_AA);
-            cv::imshow("Image", cbImages.at(i));
-            cv::waitKey(0);
+            for (size_t i = 0; i < cbImages.size(); ++i)
+            {
+                cv::putText(cbImages.at(i), cbImageFilenames.at(i), cv::Point(10, 20),
+                            cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
+                            1, CV_AA);
+                cv::imshow("Image", cbImages.at(i));
+                cv::waitKey(0);
+            }
         }
     }
 

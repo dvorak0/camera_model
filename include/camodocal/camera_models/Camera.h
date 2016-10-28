@@ -90,14 +90,17 @@ class Camera
     virtual void undistToPlane(const Eigen::Vector2d &p_u, Eigen::Vector2d &p) const = 0;
     //%output p
 
-    //virtual void initUndistortMap(cv::Mat& map1, cv::Mat& map2, double fScale = 1.0) const = 0;
     virtual cv::Mat initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
                                             float fx = -1.0f, float fy = -1.0f,
                                             cv::Size imageSize = cv::Size(0, 0),
                                             float cx = -1.0f, float cy = -1.0f,
                                             cv::Mat rmat = cv::Mat::eye(3, 3, CV_32F)) const = 0;
 
-    virtual int parameterCount(void) const = 0;
+    virtual void initEISRectifyMap(cv::Mat &map1, cv::Mat &map2,
+                                   const Eigen::Matrix3d &R) const = 0;
+
+    virtual int
+    parameterCount(void) const = 0;
 
     virtual void readParameters(const std::vector<double> &parameters) = 0;
     virtual void writeParameters(std::vector<double> &parameters) const = 0;
