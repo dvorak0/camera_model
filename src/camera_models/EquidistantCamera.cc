@@ -166,8 +166,8 @@ bool EquidistantCamera::Parameters::readFromYamlFile(const std::string &filename
         m_imageHeight /= 2;
         m_mu /= 2;
         m_mv /= 2;
-        m_u0 /= 2;
-        m_v0 /= 2;
+        m_u0 = (m_v0 - 0.5) / 2;
+        m_v0 = (m_v0 - 0.5) / 2;
     }
 
     return true;
@@ -502,9 +502,9 @@ void EquidistantCamera::liftProjective(const Eigen::Vector2d &p, Eigen::Vector3d
 void EquidistantCamera::spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p) const
 {
     double theta = acos(P(2) / P.norm());
-    double phi = atan2(P(1), P(0));
+    //double phi = atan2(P(1), P(0));
 
-    Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * Eigen::Vector2d{cos(phi), sin(phi)};
+    Eigen::Vector2d p_u = r(mParameters.k2(), mParameters.k3(), mParameters.k4(), mParameters.k5(), theta) * P.head<2>().normalized();
 
     // Apply generalised projection matrix
     p << mParameters.mu() * p_u(0) + mParameters.u0(),
@@ -721,7 +721,7 @@ void EquidistantCamera::setParameters(const EquidistantCamera::Parameters &param
     m_inv_K13 = -mParameters.u0() / mParameters.mu();
     m_inv_K22 = 1.0 / mParameters.mv();
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
-    preRectify();
+    //preRectify();
 }
 
 void EquidistantCamera::readParameters(const std::vector<double> &parameterVec)

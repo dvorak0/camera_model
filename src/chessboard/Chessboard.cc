@@ -29,7 +29,8 @@ Chessboard::Chessboard(cv::Size boardSize, cv::Mat &image)
 
 void Chessboard::findCorners(bool useOpenCV)
 {
-    mCornersFound = findChessboardCorners(mImage, mBoardSize, mCorners,
+    cv::Mat mmImage = cv::Scalar::all(255) - mImage;
+    mCornersFound = findChessboardCorners(mmImage, mBoardSize, mCorners,
                                           CV_CALIB_CB_ADAPTIVE_THRESH,
                                           //CV_CALIB_CB_NORMALIZE_IMAGE +
                                           //CV_CALIB_CB_FILTER_QUADS,
@@ -248,10 +249,11 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat &image,
                 {
                     mp.x += p->corners[i]->pt.x;
                     mp.y += p->corners[i]->pt.y;
+                    cv::circle(color_img, p->corners[i]->pt, 1, cv::Scalar(0, 0, 255), 1);
                 }
                 mp.x /= 4;
                 mp.y /= 4;
-                cv::circle(color_img, mp, 2, cv::Scalar(0, 0, 255), 2);
+                cv::circle(color_img, mp, 1, cv::Scalar(0, 0, 255), 1);
             }
             if (quads.empty())
             {
@@ -267,6 +269,7 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat &image,
             // prerequisites
             findQuadNeighbors(quads, dilations);
             cv::imshow("queds", color_img);
+            cv::waitKey(0);
 
             // The connected quads will be organized in groups. The following loop
             // increases a "group_idx" identifier.
@@ -320,7 +323,8 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat &image,
                     found = false;
                 }
             }
-            //printf("finally %s\n", found ? "true" : "false");
+            if (found)
+                printf("finally %s\n", found ? "true" : "false");
         }
     }
 
@@ -337,9 +341,9 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat &image,
             corners.push_back(outputCorners.at(i)->pt);
         }
 
-        //        cv::cornerSubPix(image, corners, cv::Size(11, 11), cv::Size(-1,-1),
-        //                         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-        //
+        cv::cornerSubPix(image, corners, cv::Size(11, 11), cv::Size(-1, -1),
+                         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+
         //puts("found");
         return true;
     }
@@ -1013,6 +1017,19 @@ void Chessboard::findQuadNeighbors(std::vector<ChessboardQuadPtr> &quads, int di
                     {
                         // Check whether conditions are fulfilled
                         //if (matchCorners(curQuad, i, quad, j))
+
+                        bool cross_check = true;
+                        for (int k = 0; k < 4; k++)
+                        {
+                            cv::Point2f dp2 = curQuad->corners[k]->pt - quad->corners[j]->pt;
+                            float dist2 = dp2.dot(dp2);
+                            if (dist2 < dist)
+                            {
+                                cross_check = false;
+                                break;
+                            }
+                        }
+                        if (cross_check)
                         {
                             closestCornerIdx = j;
                             closestQuad = quad;
@@ -1046,6 +1063,7 @@ void Chessboard::findQuadNeighbors(std::vector<ChessboardQuadPtr> &quads, int di
                 // We've found one more corner - remember it
                 closestCorner->pt = (pt + closestCorner->pt) * 0.5f;
                 cv::line(color_img, curQuad->center(), closestQuad->center(), cv::Scalar(0, 255, 0));
+                cv::circle(color_img, closestCorner->pt, 2, cv::Scalar(0, 255, 0), 2);
 
                 curQuad->count++;
                 curQuad->neighbors[i] = closestQuad;
@@ -1184,7 +1202,7 @@ void Chessboard::generateQuads(std::vector<ChessboardQuadPtr> &quads,
 {
     // Empirical lower bound for the size of allowable quadrangles.
     // MARTIN, modified: Added "*0.1" in order to find smaller quads.
-    int minSize = lround(image.cols * image.rows * .03 * 0.01 * 0.92 * 0.1 * 0.1);
+    int minSize = lround(image.cols * image.rows * .03 * 0.01 * 0.8 * 0.1);
 
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
@@ -1223,7 +1241,7 @@ void Chessboard::generateQuads(std::vector<ChessboardQuadPtr> &quads,
         }
 
         std::vector<cv::Point> approxContour;
-        for (int approx_level = min_approx_level; approx_level <= 100; approx_level++)
+        for (int approx_level = min_approx_level; approx_level <= 200; approx_level++)
         {
             cv::approxPolyDP(contour, approxContour, approx_level, true);
 
@@ -1658,7 +1676,7 @@ bool Chessboard::checkChessboard(const cv::Mat &image, cv::Size patternSize) con
 bool Chessboard::checkBoardMonotony(std::vector<ChessboardCornerPtr> &corners,
                                     cv::Size patternSize)
 {
-    const float threshFactor = 0.2f;
+    const float threshFactor = 0.5f;
 
     Spline splineXY, splineYX;
     splineXY.setLowBC(Spline::PARABOLIC_RUNOUT_BC);

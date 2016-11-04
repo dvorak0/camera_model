@@ -30,6 +30,7 @@ int main(int argc, char **argv)
     bool useOpenCV;
     bool viewResults;
     bool verbose;
+    bool rectification;
 
     //========= Handling Program options =========
     boost::program_options::options_description desc("Allowed options");
@@ -47,6 +48,7 @@ int main(int argc, char **argv)
         ("opencv", boost::program_options::bool_switch(&useOpenCV)->default_value(false), "Use OpenCV to detect corners")
         ("view-results", boost::program_options::bool_switch(&viewResults)->default_value(true), "View results")
         ("verbose,v", boost::program_options::bool_switch(&verbose)->default_value(true), "Verbose output")
+        ("rectification,r", boost::program_options::bool_switch(&rectification)->default_value(false), "rectification output")
         ;
     // clang-format on
 
@@ -143,6 +145,8 @@ int main(int argc, char **argv)
         }
     }
 
+    std::sort(std::begin(imageFilenames), std::end(imageFilenames));
+
     if (imageFilenames.empty())
     {
         std::cerr << "# ERROR: No chessboard images found." << std::endl;
@@ -156,7 +160,7 @@ int main(int argc, char **argv)
 
     cv::Mat image = cv::imread(imageFilenames.front(), -1);
     const cv::Size frameSize = image.size();
-    if (true)
+    if (rectification)
     {
         camodocal::CameraPtr m_camera = camodocal::CameraFactory::instance()->generateCameraFromYamlFile(cameraName + "_camera_calib.yaml");
         for (size_t i = 0; i < imageFilenames.size(); ++i)
@@ -216,12 +220,30 @@ int main(int argc, char **argv)
             {
                 cv::Mat tmp;
                 cv::remap(img, tmp, mapx[i], mapy[i], cv::INTER_LINEAR);
-                puts("write");
                 tmp.copyTo(s_img(cv::Rect(dxy[i][0] * size + size, dxy[i][1] * size + size, size, size))); // = tmp;
-                printf("%d %d\n", s_img.type(), tmp.type());
                 cv::imshow("sub", tmp);
                 cv::imshow("undistort", s_img);
             }
+
+            mapx[0] = cv::Mat{size, size * 4, CV_32F};
+            mapy[0] = cv::Mat{size, size * 4, CV_32F};
+
+            s_img = cv::Mat{size, size * 4, CV_8U};
+            for (int v = 0; v < size; v++)
+                for (int u = 0; u < size * 4; u++)
+                {
+                    double theta = 2 * M_PI / (size * 4) * u;
+                    Eigen::Vector3d P{cos(theta), sin(theta),
+                                      (v - 0.5 * size) / f};
+                    Eigen::Vector2d p;
+                    m_camera->spaceToPlane(P, p);
+                    mapx[0].at<float>(v, u) = p.x();
+                    mapy[0].at<float>(v, u) = p.y();
+                }
+
+            cv::remap(img, s_img, mapx[0], mapy[0], cv::INTER_LINEAR);
+            cv::imshow("360", s_img);
+
             cv::waitKey(0);
         }
         return 0;
@@ -306,17 +328,16 @@ int main(int argc, char **argv)
 
             // visualize observed and reprojected points
             calibration.drawResults(cbImages);
+        }
 
-            for (size_t i = 0; i < cbImages.size(); ++i)
-            {
-                cv::putText(cbImages.at(i), cbImageFilenames.at(i), cv::Point(10, 20),
-                            cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
-                            1, CV_AA);
-                cv::imshow("Image", cbImages.at(i));
-                cv::waitKey(0);
-            }
+        for (size_t i = 0; i < cbImages.size(); ++i)
+        {
+            cv::putText(cbImages.at(i), cbImageFilenames.at(i), cv::Point(10, 20),
+                        cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
+                        1, CV_AA);
+            cv::imshow("Image", cbImages.at(i));
+            cv::waitKey(0);
         }
     }
-
     return 0;
 }
