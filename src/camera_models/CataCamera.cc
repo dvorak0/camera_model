@@ -178,6 +178,17 @@ bool CataCamera::Parameters::readFromYamlFile(const std::string &filename)
     m_u0 = static_cast<double>(n["u0"]);
     m_v0 = static_cast<double>(n["v0"]);
 
+    if (!fs["binning"].isNone() && static_cast<int>(fs["binning"]))
+    {
+        puts("binning");
+        m_imageWidth /= 2;
+        m_imageHeight /= 2;
+        m_gamma1 /= 2;
+        m_gamma2 /= 2;
+        m_u0 = (m_v0 - 0.5) / 2;
+        m_v0 = (m_v0 - 0.5) / 2;
+    }
+
     return true;
 }
 
@@ -630,7 +641,7 @@ void CataCamera::spaceToPlane(const Eigen::Vector3d &P, Eigen::Vector2d &p) cons
         mParameters.gamma2() * p_d(1) + mParameters.v0();
 }
 
-/** 
+/**
  * \brief Project a 3D point to the image plane and calculate Jacobian
  *
  * \param P 3D point coordinates
@@ -883,6 +894,37 @@ CataCamera::initUndistortRectifyMap(cv::Mat &map1, cv::Mat &map2,
 
 void CataCamera::initEISRectifyMap(cv::Mat &map1, cv::Mat &map2, const Eigen::Matrix3d &R) const
 {
+    cv::Mat mapX = cv::Mat::zeros(mParameters.imageHeight(), mParameters.imageWidth(), CV_32F);
+    cv::Mat mapY = cv::Mat::zeros(mParameters.imageHeight(), mParameters.imageWidth(), CV_32F);
+
+    for (int v = 0; v < mParameters.imageHeight(); ++v)
+    {
+        for (int u = 0; u < mParameters.imageWidth(); ++u)
+        {
+            Eigen::Vector3f xo;
+            xo << u, v, 1;
+
+            double mx_u = m_inv_K11 * xo.x() + m_inv_K13;
+            double my_u = m_inv_K22 * xo.y() + m_inv_K23;
+
+            double xi = mParameters.xi();
+
+            double lambda = (xi + sqrt(1.0 + (1.0 - xi * xi) * (mx_u * mx_u + my_u * my_u))) / (1.0 + mx_u * mx_u + my_u * my_u);
+
+            Eigen::Vector3d P{lambda * mx_u, lambda * my_u, lambda - xi};
+
+            //Eigen::Vector3d uo = R * P;
+            Eigen::Vector3d uo = R * P;
+
+            Eigen::Vector2d p;
+            spaceToPlane(uo, p);
+
+            mapX.at<float>(v, u) = p.x();
+            mapY.at<float>(v, u) = p.y();
+        }
+    }
+
+    cv::convertMaps(mapX, mapY, map1, map2, CV_16SC2, false);
 }
 
 int CataCamera::parameterCount(void) const

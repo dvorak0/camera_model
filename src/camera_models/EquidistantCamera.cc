@@ -166,7 +166,7 @@ bool EquidistantCamera::Parameters::readFromYamlFile(const std::string &filename
         m_imageHeight /= 2;
         m_mu /= 2;
         m_mv /= 2;
-        m_u0 = (m_v0 - 0.5) / 2;
+        m_u0 = (m_u0 - 0.5) / 2;
         m_v0 = (m_v0 - 0.5) / 2;
     }
 

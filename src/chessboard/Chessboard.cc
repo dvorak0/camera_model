@@ -269,7 +269,7 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat &image,
             // prerequisites
             findQuadNeighbors(quads, dilations);
             cv::imshow("queds", color_img);
-            cv::waitKey(0);
+            //cv::waitKey(0);
 
             // The connected quads will be organized in groups. The following loop
             // increases a "group_idx" identifier.
