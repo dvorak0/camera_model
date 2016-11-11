@@ -18,6 +18,8 @@ backward::SignalHandling sh;
 #include "camodocal/camera_models/CameraFactory.h"
 #include "camodocal/calib/CameraCalibration.h"
 #include "camodocal/gpl/gpl.h"
+
+int cnt = 1;
 int main(int argc, char **argv)
 {
     cv::Size boardSize;
@@ -37,9 +39,9 @@ int main(int argc, char **argv)
     // clang-format off
     desc.add_options()
         ("help", "produce help message")
-        ("width,w", boost::program_options::value<int>(&boardSize.width)->default_value(10), "Number of inner corners on the chessboard pattern in x direction")
-        ("height,h", boost::program_options::value<int>(&boardSize.height)->default_value(14), "Number of inner corners on the chessboard pattern in y direction")
-        ("size,s", boost::program_options::value<float>(&squareSize)->default_value(7.f), "Size of one square in mm")
+        ("width,w", boost::program_options::value<int>(&boardSize.width)->default_value(3), "Number of inner corners on the chessboard pattern in x direction")
+        ("height,h", boost::program_options::value<int>(&boardSize.height)->default_value(4), "Number of inner corners on the chessboard pattern in y direction")
+        ("size,s", boost::program_options::value<float>(&squareSize)->default_value(13.5f), "Size of one square in mm")
         ("input,i", boost::program_options::value<std::string>(&inputDir)->default_value("test"), "Input directory containing chessboard images")
         ("prefix,p", boost::program_options::value<std::string>(&prefix)->default_value("frame"), "Prefix of images")
         ("file-extension,e", boost::program_options::value<std::string>(&fileExtension)->default_value(".jpg"), "File extension of images")
@@ -158,7 +160,7 @@ int main(int argc, char **argv)
         std::cerr << "# INFO: # images: " << imageFilenames.size() << std::endl;
     }
 
-    cv::Mat image = cv::imread(imageFilenames.front(), -1);
+    cv::Mat image = cv::imread(imageFilenames.front(), -1).rowRange(cnt * 1024, cnt * 1024 + 1024);
     const cv::Size frameSize = image.size();
     if (rectification)
     {
@@ -255,7 +257,7 @@ int main(int argc, char **argv)
     std::vector<bool> chessboardFound(imageFilenames.size(), false);
     for (size_t i = 0; i < imageFilenames.size(); ++i)
     {
-        image = cv::imread(imageFilenames.at(i), -1);
+        image = cv::imread(imageFilenames.at(i), -1).rowRange(cnt * 1024, cnt * 1024 + 1024);
 
         camodocal::Chessboard chessboard(boardSize, image);
 
@@ -264,7 +266,7 @@ int main(int argc, char **argv)
         {
             if (verbose)
             {
-                std::cerr << "# INFO: Detected chessboard in image " << i + 1 << ", " << imageFilenames.at(i) << std::endl;
+                std::cerr << "# INFO: Detected chessboard in image " << i << ", " << imageFilenames.at(i) << std::endl;
             }
 
             calibration.addChessboardData(chessboard.getCorners());
@@ -275,15 +277,18 @@ int main(int argc, char **argv)
             cv::imshow("Image", sketch);
             cv::waitKey(50);
         }
-        else if (verbose)
+        else
         {
-            std::cerr << "# INFO: Did not detect chessboard in image " << i + 1 << std::endl;
+            if (verbose)
+            {
+                std::cerr << "# INFO: Did not detect chessboard in image " << i << std::endl;
+            }
         }
         chessboardFound.at(i) = chessboard.cornersFound();
     }
     cv::destroyWindow("Image");
 
-    if (calibration.sampleCount() < 10)
+    if (calibration.sampleCount() < 0)
     {
         std::cerr << "# ERROR: Insufficient number of detected chessboards." << std::endl;
         return 1;
@@ -299,6 +304,23 @@ int main(int argc, char **argv)
     calibration.calibrate();
     calibration.writeParams(cameraName + "_camera_calib.yaml");
     calibration.writeChessboardData(cameraName + "_chessboard_data.dat");
+    FILE *f = fopen("/home/dji/a.txt", "w");
+
+    for (size_t i = 0, j = 0; i < chessboardFound.size(); i++)
+    {
+        if (chessboardFound.at(i))
+        {
+            fprintf(f, "%lu %f %f %f %f %f %f\n", i,
+                    calibration.cameraPoses().at<double>(j, 0),
+                    calibration.cameraPoses().at<double>(j, 1),
+                    calibration.cameraPoses().at<double>(j, 2),
+                    calibration.cameraPoses().at<double>(j, 3),
+                    calibration.cameraPoses().at<double>(j, 4),
+                    calibration.cameraPoses().at<double>(j, 5));
+            j++;
+        }
+    }
+    fclose(f);
 
     if (verbose)
     {
@@ -323,7 +345,7 @@ int main(int argc, char **argv)
             {
                 continue;
             }
-            cbImages.push_back(cv::imread(imageFilenames.at(i), -1));
+            cbImages.push_back(cv::imread(imageFilenames.at(i), -1).rowRange(cnt * 1024, cnt * 1024 + 1024));
             cbImageFilenames.push_back(imageFilenames.at(i));
 
             // visualize observed and reprojected points

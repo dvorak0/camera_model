@@ -721,7 +721,7 @@ void EquidistantCamera::setParameters(const EquidistantCamera::Parameters &param
     m_inv_K13 = -mParameters.u0() / mParameters.mu();
     m_inv_K22 = 1.0 / mParameters.mv();
     m_inv_K23 = -mParameters.v0() / mParameters.mv();
-    //preRectify();
+    preRectify();
 }
 
 void EquidistantCamera::readParameters(const std::vector<double> &parameterVec)

@@ -3,7 +3,7 @@ project(camera_model)
 
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11 -march=native")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC -g")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
@@ -48,9 +48,25 @@ add_executable(Calibration
     src/gpl/gpl.cc
     src/gpl/EigenQuaternionParameterization.cc)
 
+add_executable(stereo_calibration
+    src/extrinsic_calib.cc
+    src/chessboard/Chessboard.cc
+    src/calib/StereoCalibration.cc
+    src/camera_models/Camera.cc
+    src/camera_models/CameraFactory.cc
+    src/camera_models/CostFunctionFactory.cc
+    src/camera_models/PinholeCamera.cc
+    src/camera_models/CataCamera.cc
+    src/camera_models/EquidistantCamera.cc
+    src/camera_models/ScaramuzzaCamera.cc
+    src/sparse_graph/Transform.cc
+    src/gpl/gpl.cc
+    src/gpl/EigenQuaternionParameterization.cc)
+
 add_library(camera_model STATIC
     src/chessboard/Chessboard.cc
     src/calib/CameraCalibration.cc
+    src/calib/StereoCalibration.cc
     src/camera_models/Camera.cc
     src/camera_models/CameraFactory.cc
     src/camera_models/CostFunctionFactory.cc
@@ -63,4 +79,5 @@ add_library(camera_model STATIC
     src/gpl/EigenQuaternionParameterization.cc)
 
 target_link_libraries(Calibration ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} dw)
+target_link_libraries(stereo_calibration ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} dw)
 target_link_libraries(camera_model ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})

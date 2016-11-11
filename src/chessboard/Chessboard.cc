@@ -31,14 +31,27 @@ void Chessboard::findCorners(bool useOpenCV)
 {
     cv::Mat mmImage = cv::Scalar::all(255) - mImage;
     mCornersFound = findChessboardCorners(mmImage, mBoardSize, mCorners,
-                                          CV_CALIB_CB_ADAPTIVE_THRESH,
-                                          //CV_CALIB_CB_NORMALIZE_IMAGE +
+                                          //CV_CALIB_CB_ADAPTIVE_THRESH,
+                                          CV_CALIB_CB_NORMALIZE_IMAGE,
                                           //CV_CALIB_CB_FILTER_QUADS,
                                           //CV_CALIB_CB_FAST_CHECK,
                                           useOpenCV);
 
     if (mCornersFound)
     {
+
+        cv::Point2f a = mCorners.front();
+        cv::Point2f b = mCorners.back();
+        cv::Point2f aa = a + (b - a) * 0.9;
+        cv::Point2f bb = b + (a - b) * 0.9;
+
+        cv::circle(color_img, aa, 10, cv::Scalar(255, 0, 0), 10);
+        cv::circle(color_img, bb, 10, cv::Scalar(255, 0, 0), 10);
+        if (mmImage.at<uchar>(aa) > mmImage.at<uchar>(bb))
+        {
+            std::reverse(std::begin(mCorners), std::end(mCorners));
+        }
+        cv::imshow("queds", color_img);
         // draw chessboard corners
         cv::drawChessboardCorners(mSketch, mBoardSize, mCorners, mCornersFound);
     }
@@ -202,7 +215,7 @@ bool Chessboard::findChessboardCornersImproved(const cv::Mat &image,
                 int thresh_level = lround(mean - 10);
                 thresh_level = std::max(thresh_level, 10);
 
-                cv::threshold(img, thresh_img, thresh_level, 255, CV_THRESH_BINARY);
+                cv::threshold(img, thresh_img, 10, 255, CV_THRESH_BINARY);
             }
 
             // MARTIN's Code
